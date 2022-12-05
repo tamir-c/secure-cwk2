@@ -2,11 +2,7 @@ package comp3911.cwk2;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,8 +22,8 @@ import freemarker.template.TemplateExceptionHandler;
 public class AppServlet extends HttpServlet {
 
   private static final String CONNECTION_URL = "jdbc:sqlite:db.sqlite3";
-  private static final String AUTH_QUERY = "select * from user where username='%s' and password='%s'";
-  private static final String SEARCH_QUERY = "select * from patient where surname='%s' collate nocase";
+  private static final String AUTH_QUERY = "select * from user where username=? and password=?";
+  private static final String SEARCH_QUERY = "select * from patient where surname=? collate nocase";
 
   private final Configuration fm = new Configuration(Configuration.VERSION_2_3_28);
   private Connection database;
@@ -103,11 +99,12 @@ public class AppServlet extends HttpServlet {
   }
 
   private boolean authenticated(String username, String password) throws SQLException {
-    String query = String.format(AUTH_QUERY, username, password);
-    try (Statement stmt = database.createStatement()) {
-      ResultSet results = stmt.executeQuery(query);
-      return results.next();
-    }
+    //String query = String.format(AUTH_QUERY, username, password);
+    PreparedStatement pstmt = database.prepareStatement( AUTH_QUERY );
+    pstmt.setString(1, username);
+    pstmt.setString(2, password);
+    ResultSet results = pstmt.executeQuery();
+    return results.next();
   }
 
   private List<Record> searchResults(String surname) throws SQLException {
