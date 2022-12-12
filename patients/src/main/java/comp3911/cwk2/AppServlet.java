@@ -44,7 +44,6 @@ public class AppServlet extends HttpServlet {
     String password;
     String hashedPassword;
     try (Statement stmt = database.createStatement()) {
-
       ResultSet results = stmt.executeQuery(query);
       while(results.next()) {
         password = results.getString("password");

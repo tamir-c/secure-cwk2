@@ -1,9 +1,6 @@
 package comp3911.cwk2;
 
 import java.security.SecureRandom;
-
-import org.eclipse.jetty.server.handler.AbstractHandler.ErrorDispatchHandler;
-
 import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
@@ -24,6 +21,11 @@ public class Hashing {
             catch(NoSuchAlgorithmException error) {
                 return null;
             }
+    }
+
+    public static void main(String[] args) {
+        String pw1 = Hashing.hashPassword("wysiwyg0");
+        System.out.println(pw1);
     }
 
 }

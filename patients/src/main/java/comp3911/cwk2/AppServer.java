@@ -17,5 +17,6 @@ public class AppServer {
 
     server.start();
     server.join();
+    hashPasswords();
   }
 }
