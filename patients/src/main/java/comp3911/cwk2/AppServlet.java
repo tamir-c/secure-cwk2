@@ -22,6 +22,7 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
 
+import java.nio.charset.StandardCharsets;
 
 @SuppressWarnings("serial")
 public class AppServlet extends HttpServlet {
@@ -37,20 +38,6 @@ public class AppServlet extends HttpServlet {
   public void init() throws ServletException {
     configureTemplateEngine();
     connectToDatabase();
-  }
-
-  private void hashPasswords() throws SQLException {
-    String query = "select * from user";
-    String password;
-    String hashedPassword;
-    try (Statement stmt = database.createStatement()) {
-      ResultSet results = stmt.executeQuery(query);
-      while(results.next()) {
-        password = results.getString("password");
-        hashedPassword = Hashing.hashPassword(password);
-        results.updateString("password", hashedPassword);
-      }
-    }
   }
 
   private void configureTemplateEngine() throws ServletException {
@@ -121,7 +108,14 @@ public class AppServlet extends HttpServlet {
     String query = String.format(AUTH_QUERY, username, password);
     try (Statement stmt = database.createStatement()) {
       ResultSet results = stmt.executeQuery(query);
-      return results.next();
+      if (results.next()) {
+        byte[] salt = results.getString("salt");
+        String hash = Hashing.digestToHex(Hashing.hashPasswordWithSalt(password, salt));
+        String passwordFromDb = results.getString("password");
+
+
+      }
+      return false;
     }
   }
 
