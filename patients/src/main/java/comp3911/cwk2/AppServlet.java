@@ -22,7 +22,7 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
 
-import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 @SuppressWarnings("serial")
 public class AppServlet extends HttpServlet {
@@ -109,11 +109,10 @@ public class AppServlet extends HttpServlet {
     try (Statement stmt = database.createStatement()) {
       ResultSet results = stmt.executeQuery(query);
       if (results.next()) {
-        byte[] salt = results.getString("salt");
-        String hash = Hashing.digestToHex(Hashing.hashPasswordWithSalt(password, salt));
-        String passwordFromDb = results.getString("password");
-
-
+        String saltString = results.getString("salt");
+        String passwordHashFromDb = results.getString("password");
+        String hash = Hashing.hashPasswordWithSalt(password, saltString);
+        return hash.equals(passwordHashFromDb);
       }
       return false;
     }
