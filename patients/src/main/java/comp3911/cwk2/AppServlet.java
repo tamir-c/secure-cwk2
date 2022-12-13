@@ -18,6 +18,8 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
 
+import java.util.Base64;
+
 @SuppressWarnings("serial")
 public class AppServlet extends HttpServlet {
 
@@ -99,12 +101,17 @@ public class AppServlet extends HttpServlet {
   }
 
   private boolean authenticated(String username, String password) throws SQLException {
-    //String query = String.format(AUTH_QUERY, username, password);
-    PreparedStatement pstmt = database.prepareStatement( AUTH_QUERY );
-    pstmt.setString(1, username);
-    pstmt.setString(2, password);
-    ResultSet results = pstmt.executeQuery();
-    return results.next();
+    String query = String.format(AUTH_QUERY, username, password);
+    try (Statement stmt = database.createStatement()) {
+      ResultSet results = stmt.executeQuery(query);
+      if (results.next()) {
+        String saltString = results.getString("salt");
+        String passwordHashFromDb = results.getString("password");
+        String hash = Hashing.hashPasswordWithSalt(password, saltString);
+        return hash.equals(passwordHashFromDb);
+      }
+      return false;
+    }
   }
 
   private List<Record> searchResults(String surname) throws SQLException {
