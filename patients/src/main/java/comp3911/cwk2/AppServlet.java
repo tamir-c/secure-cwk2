@@ -196,8 +196,6 @@ public class AppServlet extends HttpServlet {
   private void encryptDatabase() throws Exception{
     Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
     cipher.init(Cipher.ENCRYPT_MODE, pair.getPublic());
-    Cipher cipher2 = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-    cipher2.init(Cipher.DECRYPT_MODE, pair.getPrivate());
     List<Record> records = new ArrayList<>();
     String query = String.format(SEARCH_QUERY, "'or '1' = '1");
     try (Statement stmt = database.createStatement()) {
