@@ -27,8 +27,8 @@ import java.util.Base64;
 public class AppServlet extends HttpServlet {
 
   private static final String CONNECTION_URL = "jdbc:sqlite:db.sqlite3";
-  private static final String AUTH_QUERY = "select * from user where username='%s' and password='%s'";
-  private static final String SEARCH_QUERY = "select * from patient where surname='%s' collate nocase";
+  private static final String AUTH_QUERY = "select * from user where username=?";
+  private static final String SEARCH_QUERY = "select * from patient where surname=? collate nocase";
   private static KeyPair pair = null;
   private static PublicKey publicKey = null;
   private static PrivateKey privateKey = null;
@@ -111,9 +111,10 @@ public class AppServlet extends HttpServlet {
   }
 
   private boolean authenticated(String username, String password) throws SQLException {
-    String query = String.format(AUTH_QUERY, username, password);
-    try (Statement stmt = database.createStatement()) {
-      ResultSet results = stmt.executeQuery(query);
+    // String query = String.format(AUTH_QUERY, username);
+    try (PreparedStatement stmt = database.prepareStatement( AUTH_QUERY )) {
+      stmt.setString(1, username);
+      ResultSet results = stmt.executeQuery();
       if (results.next()) {
         String saltString = results.getString("salt");
         String passwordHashFromDb = results.getString("password");
@@ -128,9 +129,9 @@ public class AppServlet extends HttpServlet {
     Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
     cipher.init(Cipher.DECRYPT_MODE, pair.getPrivate());
     List<Record> records = new ArrayList<>();
-    String query = String.format(SEARCH_QUERY, surname);
-    try (Statement stmt = database.createStatement()) {
-      ResultSet results = stmt.executeQuery(query);
+    try (PreparedStatement stmt = database.prepareStatement(SEARCH_QUERY)) {
+      stmt.setString(1, surname);
+      ResultSet results = stmt.executeQuery();
       while (results.next()) {
         Record rec = new Record();
 
