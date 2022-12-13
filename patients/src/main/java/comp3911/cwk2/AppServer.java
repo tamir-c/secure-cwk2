@@ -8,10 +8,8 @@ import org.eclipse.jetty.util.log.StdErrLog;
 public class AppServer {
   public static void main(String[] args) throws Exception {
     Log.setLog(new StdErrLog());
-
     ServletHandler handler = new ServletHandler();
     handler.addServletWithMapping(AppServlet.class, "/*");
-
     Server server = new Server(8080);
     server.setHandler(handler);
 
