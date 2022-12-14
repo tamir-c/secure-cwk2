@@ -5,12 +5,15 @@ import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -20,8 +23,6 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
-
-import java.util.Base64;
 
 @SuppressWarnings("serial")
 public class AppServlet extends HttpServlet {
@@ -148,7 +149,7 @@ public class AppServlet extends HttpServlet {
   }
 
   private void KeyPairGenerator() throws Exception {
-    //Creating KeyPair generator object
+    //Creating KeyPairGenerator object
     KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
 
     //Initializing the KeyPairGenerator
@@ -175,16 +176,17 @@ public class AppServlet extends HttpServlet {
 
   private KeyPair loadKeyPair() throws Exception {
     // Read Public Key.
-    File filePublicKey = new File("public.key");
+    decryptKey();
+    File PublicKeyFile = new File("public.key");
     FileInputStream fis = new FileInputStream("public.key");
-    byte[] encodedPublicKey = new byte[(int) filePublicKey.length()];
+    byte[] encodedPublicKey = new byte[(int) PublicKeyFile.length()];
     fis.read(encodedPublicKey);
     fis.close();
 
     // Read Private Key.
-    File filePrivateKey = new File("private.key");
+    File PrivateKeyFile = new File("private.key");
     fis = new FileInputStream("private.key");
-    byte[] encodedPrivateKey = new byte[(int) filePrivateKey.length()];
+    byte[] encodedPrivateKey = new byte[(int) PrivateKeyFile.length()];
     fis.read(encodedPrivateKey);
     fis.close();
 
@@ -197,7 +199,7 @@ public class AppServlet extends HttpServlet {
     PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(
             encodedPrivateKey);
     PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
-
+    encryptKey();
     return new KeyPair(publicKey, privateKey);
   }
 
@@ -247,5 +249,78 @@ public class AppServlet extends HttpServlet {
         System.out.println("\n-------End--------\n");
       }
     }
+  }
+
+  private void encryptKey() throws Exception{
+
+    FileInputStream fis = new FileInputStream("private.key");
+    FileOutputStream fos = new FileOutputStream("private.des");
+
+    String password = "patients";
+    PBEKeySpec pbeKeySpec = new PBEKeySpec(password.toCharArray());
+    SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBEWithMD5AndTripleDES");
+    SecretKey secretKey = secretKeyFactory.generateSecret(pbeKeySpec);
+
+    byte[] salt = new byte[8];
+    Random random = new Random();
+    random.nextBytes(salt);
+
+    PBEParameterSpec pbeParameterSpec = new PBEParameterSpec(salt, 100);
+    Cipher cipher = Cipher.getInstance("PBEWithMD5AndTripleDES");
+    cipher.init(Cipher.ENCRYPT_MODE, secretKey, pbeParameterSpec);
+    fos.write(salt);
+
+    byte[] input = new byte[64];
+    int bytesRead;
+    while ((bytesRead = fis.read(input)) != -1) {
+      byte[] output = cipher.update(input, 0, bytesRead);
+      if (output != null)
+        fos.write(output);
+    }
+
+    byte[] output = cipher.doFinal();
+    if (output != null)
+      fos.write(output);
+
+    fis.close();
+    File PrivateKey = new File("private.key");
+    PrivateKey.delete();
+    fos.flush();
+    fos.close();
+  }
+
+  private void decryptKey() throws Exception {
+
+    String password = "patients";
+    PBEKeySpec pbeKeySpec = new PBEKeySpec(password.toCharArray());
+    SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBEWithMD5AndTripleDES");
+    SecretKey secretKey = secretKeyFactory.generateSecret(pbeKeySpec);
+
+    FileInputStream fis = new FileInputStream("private.des");
+    byte[] salt = new byte[8];
+    fis.read(salt);
+
+    PBEParameterSpec pbeParameterSpec = new PBEParameterSpec(salt, 100);
+
+    Cipher cipher = Cipher.getInstance("PBEWithMD5AndTripleDES");
+    cipher.init(Cipher.DECRYPT_MODE, secretKey, pbeParameterSpec);
+    FileOutputStream fos = new FileOutputStream("private.key");
+    byte[] in = new byte[64];
+    int read;
+    while ((read = fis.read(in)) != -1) {
+      byte[] output = cipher.update(in, 0, read);
+      if (output != null)
+        fos.write(output);
+    }
+
+    byte[] output = cipher.doFinal();
+    if (output != null)
+      fos.write(output);
+
+    fis.close();
+    File PrivateKeyDes = new File("private.des");
+    PrivateKeyDes.delete();
+    fos.flush();
+    fos.close();
   }
 }
