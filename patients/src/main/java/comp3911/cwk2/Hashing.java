@@ -8,6 +8,8 @@ import java.util.Base64;
 
 public class Hashing {
     
+    public static final int ITERATIONS = 1000000;
+
     public static String[] hashPassword(String password) {
             String vals[] = new String[2];
             SecureRandom random = new SecureRandom();
@@ -17,6 +19,10 @@ public class Hashing {
                 MessageDigest md = MessageDigest.getInstance("SHA-512");
                 md.update(salt);
                 byte[] hashBytes = md.digest(password.getBytes(StandardCharsets.UTF_8));
+                for (int i = 0; i < ITERATIONS-1; i++) {
+                    md.update(salt);
+                    hashBytes = md.digest(password.getBytes(StandardCharsets.UTF_8));
+                }
                 String encodedHash = Base64.getEncoder().encodeToString(hashBytes);
                 String encodedSalt = Base64.getEncoder().encodeToString(salt);
                 vals[0] = encodedHash;
@@ -34,6 +40,10 @@ public class Hashing {
             MessageDigest md = MessageDigest.getInstance("SHA-512");
             md.update(salt);
             byte[] hashBytes = md.digest(password.getBytes(StandardCharsets.UTF_8));
+            for (int i = 0; i < ITERATIONS-1; i++) {
+                md.update(salt);
+                hashBytes = md.digest(password.getBytes(StandardCharsets.UTF_8));
+            }
             String encodedHash = Base64.getEncoder().encodeToString(hashBytes);
             return encodedHash;
         }
